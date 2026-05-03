@@ -1,1 +1,1 @@
-web: gunicorn taskflow.wsgi --log-file -
+web: gunicorn taskflow.wsgi --bind 0.0.0.0:$PORT --log-file -
