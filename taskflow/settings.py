@@ -115,3 +115,4 @@ CSRF_TRUSTED_ORIGINS = [
     'https://task-flow-production-dc98.up.railway.app',
     'http://task-flow-production-dc98.up.railway.app',
 ]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
