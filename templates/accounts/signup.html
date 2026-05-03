@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up{% endblock %}
+
+{% block auth_content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: var(--bg);">
+  <div class="auth-card">
+    <div class="text-center mb-4">
+      <div class="auth-logo">TaskFlow</div>
+      <div class="auth-sub">Create your account</div>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold" style="font-size:13px;">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <div style="color:var(--danger); font-size:12px; margin-top:4px;">{{ field.errors.0 }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary w-100 py-2 mt-2">Create Account</button>
+    </form>
+    <p class="text-center mt-3" style="font-size:13px; color: var(--muted);">
+      Already have an account? <a href="{% url 'login' %}" style="color: var(--mid-green);">Sign in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

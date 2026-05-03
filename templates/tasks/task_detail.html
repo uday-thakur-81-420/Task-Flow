@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% block title %}{{ task.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+
+    <a href="{% url 'task_list' %}" style="color:var(--mid-green); font-size:13px; text-decoration:none;">
+      ← Back to My Tasks
+    </a>
+
+    <div class="row g-3 mt-1">
+
+      <!-- LEFT: Task Detail -->
+      <div class="col-md-7">
+        <div class="card border-0 shadow-sm" style="border-radius:12px; border-left:5px solid
+          {% if task.status == 'todo' %}#378add
+          {% elif task.status == 'in_progress' %}var(--gold)
+          {% else %}var(--accent){% endif %} !important;">
+          <div class="card-body p-4">
+
+            <!-- Title + Badge -->
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 style="color:var(--dark-green); font-weight:700;">{{ task.title }}</h5>
+              {% if task.status == 'todo' %}<span class="badge-todo">To Do</span>
+              {% elif task.status == 'in_progress' %}<span class="badge-inprogress">In Progress</span>
+              {% else %}<span class="badge-done">Done</span>{% endif %}
+            </div>
+
+            <!-- Info Grid -->
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">PROJECT</div>
+                <div style="font-size:13px;font-weight:600;color:var(--dark-green);">{{ task.project.name }}</div>
+              </div>
+              <div class="col-6">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ASSIGNED TO</div>
+                <div style="font-size:13px;font-weight:600;color:var(--dark-green);">{{ task.assigned_to.username|default:"Unassigned" }}</div>
+              </div>
+              <div class="col-6">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">PRIORITY</div>
+                <span class="priority-{{ task.priority }}">{{ task.priority|capfirst }}</span>
+              </div>
+              <div class="col-6">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">DUE DATE</div>
+                <div style="font-size:13px;font-weight:600;color:{% if task.is_overdue %}var(--danger){% else %}var(--dark-green){% endif %};">
+                  {{ task.due_date|default:"No date" }}
+                  {% if task.is_overdue %}<span class="badge-overdue ms-1">Overdue</span>{% endif %}
+                </div>
+              </div>
+            </div>
+
+            {% if task.description %}
+            <div style="background:var(--bg);padding:12px;border-radius:8px;font-size:13px;color:var(--dark-green);margin-bottom:16px;">
+              {{ task.description }}
+            </div>
+            {% endif %}
+
+            <!-- Status Update -->
+            <div style="border-top:1px solid #e5f0e6;padding-top:16px;">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:600;">UPDATE STATUS</div>
+              <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-2 flex-wrap">
+                  <button type="submit" name="status" value="todo" class="btn px-3 py-2"
+                    style="font-size:12px;font-weight:600;border-radius:8px;
+                    {% if task.status == 'todo' %}background:#dbeafe;color:#1e40af;border:2px solid #378add;
+                    {% else %}background:white;color:#888;border:1px solid #ddd;{% endif %}">
+                    ○ To Do
+                  </button>
+                  <button type="submit" name="status" value="in_progress" class="btn px-3 py-2"
+                    style="font-size:12px;font-weight:600;border-radius:8px;
+                    {% if task.status == 'in_progress' %}background:#fef3dc;color:#8a6200;border:2px solid var(--gold);
+                    {% else %}background:white;color:#888;border:1px solid #ddd;{% endif %}">
+                    ↻ In Progress
+                  </button>
+                  <button type="submit" name="status" value="done" class="btn px-3 py-2"
+                    style="font-size:12px;font-weight:600;border-radius:8px;
+                    {% if task.status == 'done' %}background:#d1fae5;color:#065f46;border:2px solid var(--accent);
+                    {% else %}background:white;color:#888;border:1px solid #ddd;{% endif %}">
+                    ✓ Done
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {% if request.user.profile.is_admin %}
+            <div class="d-flex gap-2 mt-3">
+              <a href="{% url 'task_update' task.pk %}" class="btn btn-primary" style="font-size:12px;">Edit Task</a>
+              <form method="post" action="{% url 'task_delete' task.pk %}" onsubmit="return confirm('Delete?')">
+                {% csrf_token %}
+                <button class="btn" style="font-size:12px;background:#fee2e2;color:var(--danger);border:none;">Delete</button>
+              </form>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Progress + Comments -->
+      <div class="col-md-5">
+
+        <!-- Progress Card -->
+<div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+  <div class="card-body p-4">
+    <h6 style="color:var(--dark-green);font-weight:700;margin-bottom:16px;">Task Progress</h6>
+
+    <!-- Circle — FIXED SIZE -->
+    <div class="d-flex justify-content-center mb-3">
+      <div style="position:relative;width:110px;height:110px;">
+        <svg viewBox="0 0 120 120" width="110" height="110">
+          <circle cx="60" cy="60" r="50"
+            fill="none" stroke="#e5f0e6" stroke-width="10"/>
+          <circle cx="60" cy="60" r="50"
+            fill="none" stroke="var(--accent)" stroke-width="10"
+            stroke-linecap="round"
+            stroke-dasharray="0 314"
+            transform="rotate(-90 60 60)"
+            id="progress-circle"/>
+        </svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+          <div style="font-size:20px;font-weight:700;color:var(--dark-green);" id="progress-text">{{ progress }}%</div>
+          <div style="font-size:10px;color:var(--muted);">complete</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linear Bar -->
+    <div style="background:#e5f0e6;border-radius:50px;height:8px;overflow:hidden;margin-bottom:16px;">
+      <div id="progress-bar-fill"
+           style="width:{{ progress }}%;background:var(--accent);height:100%;border-radius:50px;transition:width 0.3s;">
+      </div>
+    </div>
+
+    <!-- Slider Form -->
+    <form method="post" id="progress-form">
+      {% csrf_token %}
+      <input type="hidden" name="progress" id="progress-hidden" value="{{ progress }}">
+      <div style="margin-bottom:10px;">
+        <input type="range" min="0" max="100" step="5"
+               value="{{ progress }}" id="progress-slider"
+               style="width:100%;accent-color:var(--accent);cursor:pointer;">
+        <div class="d-flex justify-content-between" style="font-size:10px;color:var(--muted);margin-top:4px;">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100" style="font-size:12px;">
+        Update Progress
+      </button>
+    </form>
+
+  </div>
+</div>
+
+        <!-- Comments Card -->
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+          <div class="card-body p-4">
+            <h6 style="color:var(--dark-green);font-weight:700;margin-bottom:14px;">
+              Comments <span style="font-size:12px;color:var(--muted);font-weight:400;">({{ comments|length }})</span>
+            </h6>
+
+            <!-- Comments List -->
+            <div style="max-height:220px;overflow-y:auto;margin-bottom:14px;">
+              {% for comment in comments %}
+              <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <div class="avatar" style="width:28px;height:28px;font-size:10px;flex-shrink:0;">
+                  {{ comment.author.username|first|upper }}
+                </div>
+                <div style="flex:1;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                    <span style="font-size:12px;font-weight:600;color:var(--dark-green);">{{ comment.author.username }}</span>
+                    <span style="font-size:10px;color:var(--muted);">{{ comment.created_at|date:"d M, H:i" }}</span>
+                  </div>
+                  <div style="font-size:12px;color:#444;background:var(--bg);padding:8px 10px;border-radius:8px;">
+                    {{ comment.text }}
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0;">
+                No comments yet. Be the first!
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Add Comment Form -->
+            <form method="post">
+              {% csrf_token %}
+              <textarea name="comment" rows="2" placeholder="Add a comment..."
+                style="width:100%;border:1px solid #d8edd9;border-radius:8px;padding:10px;
+                       font-size:13px;resize:none;outline:none;font-family:inherit;
+                       color:var(--dark-green);background:white;"
+                onfocus="this.style.borderColor='var(--accent)'"
+                onblur="this.style.borderColor='#d8edd9'"></textarea>
+              <button type="submit" class="btn btn-primary w-100 mt-2" style="font-size:13px;">
+                Post Comment
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const slider = document.getElementById('progress-slider');
+  const circle = document.getElementById('progress-circle');
+  const progressText = document.getElementById('progress-text');
+  const progressBar = document.getElementById('progress-bar-fill');
+  const hiddenInput = document.getElementById('progress-hidden');
+  const circumference = 314;
+
+  // Initial animation
+  setTimeout(() => {
+    const val = parseInt(slider.value);
+    circle.style.strokeDasharray = (val / 100 * circumference) + ' ' + circumference;
+    circle.style.transition = 'stroke-dasharray 0.8s ease';
+  }, 200);
+
+  // Slider live update
+  slider.addEventListener('input', function() {
+    const val = parseInt(this.value);
+    hiddenInput.value = val;
+    progressText.textContent = val + '%';
+    progressBar.style.width = val + '%';
+    circle.style.strokeDasharray = (val / 100 * circumference) + ' ' + circumference;
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,217 @@
+
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 style="color: var(--dark-green); font-weight: 700;">Dashboard</h4>
+    <small style="color: var(--muted);">Welcome back, {{ request.user.username }}</small>
+  </div>
+  {% if is_admin %}
+  <a href="{% url 'task_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i> New Task
+  </a>
+  {% endif %}
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="number">{{ total }}</div>
+      <div class="label"><i class="bi bi-list-task me-1"></i>Total Tasks</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="number" style="color: #378add;">{{ todo_count }}</div>
+      <div class="label"><i class="bi bi-circle me-1"></i>To Do</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="number" style="color: var(--gold);">{{ inprogress_count }}</div>
+      <div class="label"><i class="bi bi-arrow-repeat me-1"></i>In Progress</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="number" style="color: var(--accent);">{{ done_count }}</div>
+      <div class="label"><i class="bi bi-check-circle me-1"></i>Done</div>
+    </div>
+  </div>
+</div>
+
+<!-- Progress Bar Section -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 style="color:var(--dark-green); font-weight:700; margin:0;">Overall Progress</h6>
+      <span style="font-size:22px; font-weight:700; color:var(--mid-green);">{{ overall_progress }}%</span>
+    </div>
+
+    <!-- Main Progress Bar -->
+    <div style="background:#e5f0e6; border-radius:50px; height:14px; overflow:hidden; margin-bottom:10px;">
+      <div style="width:{{ overall_progress }}%; background: linear-gradient(90deg, var(--mid-green), var(--accent));
+                  height:100%; border-radius:50px; transition: width 1s ease;"
+           id="main-progress-bar" data-width="{{ overall_progress }}">
+      </div>
+    </div>
+
+    <!-- Mini Stats -->
+    <div class="d-flex gap-4 mt-3">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#378add;"></div>
+        <span style="font-size:12px; color:var(--muted);">To Do: <strong>{{ todo_count }}</strong></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--gold);"></div>
+        <span style="font-size:12px; color:var(--muted);">In Progress: <strong>{{ inprogress_count }}</strong></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);"></div>
+        <span style="font-size:12px; color:var(--muted);">Done: <strong>{{ done_count }}</strong></span>
+      </div>
+    </div>
+
+    <!-- Donut Chart — fixed size with wrapper -->
+<div class="d-flex justify-content-center mt-3">
+  <div style="width:160px;height:160px;">
+    <canvas id="donutChart" width="160" height="160"></canvas>
+  </div>
+</div>
+
+<!-- Overdue Alert -->
+{% if overdue_tasks %}
+<div class="alert d-flex align-items-center mb-4" style="background:#fee2e2; border:1px solid #fca5a5; border-radius:8px;">
+  <i class="bi bi-exclamation-triangle-fill me-2" style="color:var(--danger);"></i>
+  <span style="color:#991b1b; font-size:13px;">
+    <strong>{{ overdue_tasks|length }} overdue task{{ overdue_tasks|length|pluralize }}</strong> — please update them.
+  </span>
+</div>
+{% endif %}
+
+<!-- Task Board -->
+<h6 style="color:var(--dark-green); font-weight:600; margin-bottom:14px;">Task Board</h6>
+<div class="row g-3 mb-4">
+
+  <!-- To Do -->
+  <div class="col-md-4">
+    <div class="col-header col-todo">To Do ({{ todo_count }})</div>
+    {% for task in recent_tasks %}
+      {% if task.status == 'todo' %}
+      <div class="task-card todo">
+        <div class="d-flex justify-content-between align-items-start">
+          <span style="font-size:13px; font-weight:600; color:var(--dark-green);">{{ task.title }}</span>
+          <span class="priority-{{ task.priority }}">{{ task.priority|upper }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span style="font-size:11px; color:var(--muted);">
+            {% if task.assigned_to %}{{ task.assigned_to.username }}{% else %}Unassigned{% endif %}
+          </span>
+          <span style="font-size:11px; color:var(--muted);">{{ task.due_date|default:"No date" }}</span>
+        </div>
+        {% if is_admin %}
+        <div class="mt-2 d-flex gap-1">
+          <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-success py-0" style="font-size:10px;">Edit</a>
+          <form method="post" action="{% url 'task_status_update' task.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="in_progress">
+            <button type="submit" class="btn btn-sm py-0" style="font-size:10px; background:#fef3dc; color:#8a6200; border:none;">→ In Progress</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- In Progress -->
+  <div class="col-md-4">
+    <div class="col-header col-progress">In Progress ({{ inprogress_count }})</div>
+    {% for task in recent_tasks %}
+      {% if task.status == 'in_progress' %}
+      <div class="task-card in_progress {% if task.is_overdue %}overdue{% endif %}">
+        <div class="d-flex justify-content-between align-items-start">
+          <span style="font-size:13px; font-weight:600; color:var(--dark-green);">{{ task.title }}</span>
+          {% if task.is_overdue %}
+            <span class="badge-overdue">Overdue</span>
+          {% else %}
+            <span class="priority-{{ task.priority }}">{{ task.priority|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span style="font-size:11px; color:var(--muted);">
+            {% if task.assigned_to %}{{ task.assigned_to.username }}{% else %}Unassigned{% endif %}
+          </span>
+          <span style="font-size:11px; color:var(--muted);">{{ task.due_date|default:"No date" }}</span>
+        </div>
+        {% if is_admin %}
+        <div class="mt-2 d-flex gap-1">
+          <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-success py-0" style="font-size:10px;">Edit</a>
+          <form method="post" action="{% url 'task_status_update' task.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="done">
+            <button type="submit" class="btn btn-sm py-0" style="font-size:10px; background:#d1fae5; color:#065f46; border:none;">→ Done</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- Done -->
+  <div class="col-md-4">
+    <div class="col-header col-done">Done ({{ done_count }})</div>
+    {% for task in recent_tasks %}
+      {% if task.status == 'done' %}
+      <div class="task-card done">
+        <div class="d-flex justify-content-between align-items-start">
+          <span style="font-size:13px; font-weight:600; color:var(--dark-green); text-decoration:line-through; opacity:.7;">{{ task.title }}</span>
+          <span class="badge-done">Done</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span style="font-size:11px; color:var(--muted);">
+            {% if task.assigned_to %}{{ task.assigned_to.username }}{% else %}Unassigned{% endif %}
+          </span>
+          <span style="font-size:11px; color:var(--muted);">{{ task.due_date|default:"No date" }}</span>
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // Donut Chart
+  const ctx = document.getElementById('donutChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['To Do', 'In Progress', 'Done'],
+        datasets: [{
+          data: [{{ todo_count }}, {{ inprogress_count }}, {{ done_count }}],
+          backgroundColor: ['#dbeafe', '#fef3dc', '#d1fae5'],
+          borderColor: ['#378add', '#d4a017', '#52b788'],
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        cutout: '70%',
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

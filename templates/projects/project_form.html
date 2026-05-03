@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}New Project{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm" style="border-radius:12px;">
+      <div class="card-body p-4">
+        <h5 style="color:var(--dark-green); font-weight:700; margin-bottom:20px;">
+          <i class="bi bi-folder-plus me-2"></i>New Project
+        </h5>
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:13px;">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+              <div style="color:var(--danger); font-size:12px; margin-top:4px;">{{ field.errors.0 }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary px-4">Create Project</button>
+            <a href="{% url 'project_list' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
