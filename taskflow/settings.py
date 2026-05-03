@@ -97,6 +97,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+
+# Yeh sirf DEBUG=True pe kaam karta hai
+if DEBUG:
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Local development mein static files ka folder
 if DEBUG:
     STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
